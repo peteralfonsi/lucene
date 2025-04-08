@@ -361,7 +361,7 @@ final class BooleanScorerSupplier extends ScorerSupplier {
       }
       requiredScoring.add(ss.get(leadCost));
     }
-    /*if (scoreMode == ScoreMode.TOP_SCORES
+    if (scoreMode == ScoreMode.TOP_SCORES
         && requiredScoring.size() > 1
         // Only specialize top-level conjunctions for clauses that don't have a two-phase iterator.
         && requiredNoScoring.stream().map(Scorer::twoPhaseIterator).allMatch(Objects::isNull)
@@ -372,16 +372,16 @@ final class BooleanScorerSupplier extends ScorerSupplier {
         requiredScoring.add(new ConstantScoreScorer(0f, ScoreMode.COMPLETE, filter.iterator()));
       }
       return new BlockMaxConjunctionBulkScorer(maxDoc, requiredScoring);
-    }*/
+    }
     if (scoreMode != ScoreMode.TOP_SCORES
         && requiredScoring.size() + requiredNoScoring.size() >= 2
         && requiredScoring.stream().map(Scorer::twoPhaseIterator).allMatch(Objects::isNull)
         && requiredNoScoring.stream().map(Scorer::twoPhaseIterator).allMatch(Objects::isNull)) {
       return new ConjunctionBulkScorer(requiredScoring, requiredNoScoring);
     }
-    /*if (scoreMode == ScoreMode.TOP_SCORES && requiredScoring.size() > 1) {
+    if (scoreMode == ScoreMode.TOP_SCORES && requiredScoring.size() > 1) {
       requiredScoring = Collections.singletonList(new BlockMaxConjunctionScorer(requiredScoring));
-    }*/
+    }
     Scorer conjunctionScorer;
     if (requiredNoScoring.size() + requiredScoring.size() == 1) {
       if (requiredScoring.size() == 1) {
