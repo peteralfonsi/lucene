@@ -48,4 +48,8 @@ public class FilterDocIdSetIterator extends DocIdSetIterator {
   public long cost() {
     return in.cost();
   }
+
+  DocIdSetIterator getWrappedDISI() {
+    return in;
+  }
 }

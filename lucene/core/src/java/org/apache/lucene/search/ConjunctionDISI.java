@@ -71,6 +71,10 @@ final class ConjunctionDISI extends DocIdSetIterator {
       BitSetConjunctionDISI conjunction = (BitSetConjunctionDISI) disi;
       allIterators.add(conjunction.lead);
       Collections.addAll(allIterators, conjunction.bitSetIterators);
+    /*} else if (disi.getClass() == FilterDocIdSetIterator.class && ((FilterDocIdSetIterator) disi).getWrappedDISI().getClass() == BitSetConjunctionDISI.class) {
+      BitSetConjunctionDISI conjunction = (BitSetConjunctionDISI) ((FilterDocIdSetIterator) disi).getWrappedDISI();
+      allIterators.add(conjunction.lead);
+      Collections.addAll(allIterators, conjunction.bitSetIterators);*/
     } else {
       allIterators.add(disi);
     }

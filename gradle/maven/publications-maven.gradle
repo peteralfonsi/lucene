@@ -19,7 +19,7 @@
 
 configure(rootProject.ext.mavenProjects) { Project project ->
   project.apply plugin: 'maven-publish'
-  project.apply plugin: 'signing'
+  //project.apply plugin: 'signing'
 
   plugins.withType(JavaPlugin) {
     // We have two types of publications: jars and signed jars.
@@ -31,9 +31,9 @@ configure(rootProject.ext.mavenProjects) { Project project ->
     }
 
     // signedJars publication is always signed.
-    signing {
+    /*signing {
       sign publishing.publications.signedJars
-    }
+    }*/
 
     // Each publication consists of the java components, source and javadoc artifacts.
     // Add tasks to assemble source and javadoc JARs.
