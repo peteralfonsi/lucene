@@ -372,10 +372,6 @@ final class BooleanScorerSupplier extends ScorerSupplier {
             .orElse(Long.MAX_VALUE);
     long leadCost = Math.min(mustLeadCost, filterLeadCost);
 
-    List<Scorer> requiredNoScoring = new ArrayList<>();
-    for (ScorerSupplier ss : subs.get(Occur.FILTER)) {
-      requiredNoScoring.add(ss.get(leadCost));
-    }
     List<Scorer> requiredScoring = new ArrayList<>();
     Collection<ScorerSupplier> requiredScoringSupplier = subs.get(Occur.MUST);
     for (ScorerSupplier ss : requiredScoringSupplier) {
@@ -383,6 +379,13 @@ final class BooleanScorerSupplier extends ScorerSupplier {
         ss.setTopLevelScoringClause();
       }
       requiredScoring.add(ss.get(leadCost));
+    }
+    List<Scorer> requiredNoScoring = new ArrayList<>();
+    for (ScorerSupplier ss : subs.get(Occur.FILTER)) {
+      requiredNoScoring.add(ss.get(leadCost));
+      if (requiredScoring.size() == 0) {
+        ss.setTopLevelScoringClause(); // TODO: This is for testing only; im not 100% sure this wont lead to Bad Things
+      }
     }
     if (scoreMode == ScoreMode.TOP_SCORES
         && requiredScoring.size() > 1

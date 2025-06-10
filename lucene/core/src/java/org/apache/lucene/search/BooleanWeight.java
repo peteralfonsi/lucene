@@ -56,7 +56,7 @@ final class BooleanWeight extends Weight {
     for (BooleanClause c : query) {
       Weight w =
           searcher.createWeight(
-              c.query(), c.isScoring() ? scoreMode : ScoreMode.COMPLETE_NO_SCORES, boost);
+              c.query(), scoreMode, boost); // TODO: Removed COMPLETE_NO_SCORES in favor of just scoreMode. This *may* allow more use of MaxScoreCache for all-filter clause case, but likely not - testing this
       weightedClauses.add(new WeightedBooleanClause(c, w));
     }
   }
