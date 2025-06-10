@@ -90,6 +90,13 @@ class ConjunctionScorer extends Scorer {
     if (scorers.length == 1) {
       scorers[0].setMinCompetitiveScore(minScore);
     }
+    // TODO: Testing only!! Maybe this causes Horrible Things!
+    if (scorers.length == 0 && !required.isEmpty()) {
+      // In this case, we are only using filter clauses (probably)? and can propagate competitive scores down to all scorers.
+      for (Scorer scorer : required) {
+        scorer.setMinCompetitiveScore(minScore);
+      }
+    }
   }
 
   @Override
