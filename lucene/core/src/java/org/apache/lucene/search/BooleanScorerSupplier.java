@@ -382,10 +382,10 @@ final class BooleanScorerSupplier extends ScorerSupplier {
     }
     List<Scorer> requiredNoScoring = new ArrayList<>();
     for (ScorerSupplier ss : subs.get(Occur.FILTER)) {
-      requiredNoScoring.add(ss.get(leadCost));
       if (requiredScoring.size() == 0) {
         ss.setTopLevelScoringClause(); // TODO: This is for testing only; im not 100% sure this wont lead to Bad Things
       }
+      requiredNoScoring.add(ss.get(leadCost));
     }
     if (scoreMode == ScoreMode.TOP_SCORES
         && requiredScoring.size() > 1
