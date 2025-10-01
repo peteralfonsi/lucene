@@ -30,9 +30,9 @@ if (propertyOrDefault("useGpg", null) != null) {
 
   rootProject.allprojects {
     plugins.withType(SigningPlugin) {
-      signing {
+      /*signing {
         useGpgCmd()
-      }
+      }*/
     }
   }
 }
