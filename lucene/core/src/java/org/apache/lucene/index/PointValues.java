@@ -332,6 +332,33 @@ public abstract class PointValues {
     }
 
     /**
+     * Similar to {@link IntersectVisitor#visit(DocIdSetIterator, byte[])} but the second argument provides
+     * a supplier for a packedValue byte[] for each point. This method may offer a speedup over repeated calls to
+     * {@link IntersectVisitor#visit(int, byte[])} because virtual calls are reduced.
+     */
+    default void visit(DocIdSetIterator iterator, LeafPackedValuesSupplier packedValuesSupplier) throws IOException { // TODO: What second argument would be good here?
+      int docID;
+      while ((docID = iterator.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
+        // TODO: for now the caller is responsible for ensuring the provider can provide enough byte[] for each value in the iterator.
+        assert packedValuesSupplier.next();
+        visit(docID, packedValuesSupplier.packedValue());
+      }
+    }
+
+    // TODO: This is just a WIP - unsure if making an interface here makes sense
+
+    /**
+     * WIP interface for providing packedValues in bulk
+     */
+    interface LeafPackedValuesSupplier {
+      /** Move to the next packed value; return false if exhausted. */
+      boolean next() throws IOException;
+
+      /** Return the current packed value (scratch buffer, reused). */
+      byte[] packedValue();
+    }
+
+    /**
      * Called for non-leaf cells to test how the cell relates to the query, to determine how to
      * further recurse down the tree.
      */

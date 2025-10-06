@@ -804,7 +804,7 @@ public class BKDReader extends PointValues {
       if (compressedDim == -1) {
         visitUniqueRawDocValues(scratchDataPackedValue, scratchIterator, count, visitor);
       } else {
-        visitCompressedDocValues(
+        visitCompressedDocValuesBulk(
             commonPrefixLengths,
             scratchDataPackedValue,
             in,
@@ -870,14 +870,15 @@ public class BKDReader extends PointValues {
               commonPrefixLengths, scratchDataPackedValue, in, scratchIterator, count, visitor);
         } else {
           // high cardinality
-          visitCompressedDocValues(
-              commonPrefixLengths,
-              scratchDataPackedValue,
-              in,
-              scratchIterator,
-              count,
-              visitor,
-              compressedDim);
+          visitCompressedDocValuesBulk(
+                  commonPrefixLengths,
+                  scratchDataPackedValue,
+                  in,
+                  scratchIterator,
+                  count,
+                  visitor,
+                  compressedDim
+          );
         }
       }
     }
@@ -934,6 +935,85 @@ public class BKDReader extends PointValues {
       visitor.visit(scratchIterator, scratchPackedValue);
     }
 
+    // TODO: A variant of visitCompressedDocValues using IntersectVisitor.visit(DocIdSetIterator, LeafPackedValuesSupplier) to reduce virtual calls
+    private void visitCompressedDocValuesBulk(
+            int[] commonPrefixLengths,
+            byte[] scratchPackedValue,
+            IndexInput in,
+            BKDReaderDocIDSetIterator scratchIterator,
+            int count,
+            PointValues.IntersectVisitor visitor,
+            int compressedDim)
+            throws IOException {
+      scratchIterator.reset(0, count); // TODO: I dont know if this is right - we know for the original, i+j starts at 0, so probably fine?
+      PackedValuesSupplierForVisitCompressedDocValuesBulk packedValuesSupplier = new PackedValuesSupplierForVisitCompressedDocValuesBulk(
+              commonPrefixLengths, scratchPackedValue, in, count, compressedDim);
+      visitor.visit(scratchIterator, packedValuesSupplier);
+    }
+
+    final class PackedValuesSupplierForVisitCompressedDocValuesBulk implements IntersectVisitor.LeafPackedValuesSupplier {
+      int currentRunStartIndex; // i
+      int indexInRun; // j
+      final int compressedByteOffset;
+      IndexInput in;
+      int count;
+      int compressedDim;
+      int[] commonPrefixLengths;
+      byte[] scratchPackedValue;
+      int runLen;
+
+      PackedValuesSupplierForVisitCompressedDocValuesBulk(
+              int[] commonPrefixLengths,
+              byte[] scratchPackedValue,
+              IndexInput in,
+              int count,
+              int compressedDim) {
+        this.commonPrefixLengths = commonPrefixLengths;
+        this.scratchPackedValue = scratchPackedValue;
+        this.in = in;
+        this.count = count;
+        this.compressedDim = compressedDim;
+        this.currentRunStartIndex = 0;
+        this.indexInRun = 0;
+        this.compressedByteOffset = compressedDim * config.bytesPerDim() + commonPrefixLengths[compressedDim];
+        commonPrefixLengths[compressedDim]++;
+        this.runLen = 0;
+      }
+      @Override
+      public boolean next() throws IOException {
+        if (currentRunStartIndex >= count) {
+          return false;
+        }
+
+        if (indexInRun == runLen) {
+          currentRunStartIndex += runLen;
+          if (currentRunStartIndex >= count) {
+            return false;
+          }
+          scratchPackedValue[compressedByteOffset] = in.readByte();
+          runLen = Byte.toUnsignedInt(in.readByte());
+          indexInRun = 0;
+        }
+
+        for (int dim = 0; dim < config.numDims(); dim++) {
+          int prefix = commonPrefixLengths[dim];
+          in.readBytes(
+                  scratchPackedValue,
+                  dim * config.bytesPerDim() + prefix,
+                  config.bytesPerDim() - prefix);
+        }
+
+        indexInRun++;
+        return true;
+      }
+
+      @Override
+      public byte[] packedValue() {
+        return scratchPackedValue;
+      }
+    }
+
+    // TODO: Remove this method's usage, and replace with bulk variant
     private void visitCompressedDocValues(
         int[] commonPrefixLengths,
         byte[] scratchPackedValue,
