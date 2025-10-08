@@ -945,21 +945,23 @@ public class BKDReader extends PointValues {
             PointValues.IntersectVisitor visitor,
             int compressedDim)
             throws IOException {
-      scratchIterator.reset(0, count); // TODO: I dont know if this is right - we know for the original, i+j starts at 0, so probably fine?
+      // TODO: Safe to do this?? Unsure - but the CELL_INSIDE_QUERY case does it
+      scratchIntsRef.ints = scratchIterator.docIDs;
+      scratchIntsRef.length = count;
       PackedValuesSupplierForVisitCompressedDocValuesBulk packedValuesSupplier = new PackedValuesSupplierForVisitCompressedDocValuesBulk(
               commonPrefixLengths, scratchPackedValue, in, count, compressedDim);
-      visitor.visit(scratchIterator, packedValuesSupplier);
+      visitor.visit(scratchIntsRef, packedValuesSupplier);
     }
 
     final class PackedValuesSupplierForVisitCompressedDocValuesBulk implements IntersectVisitor.LeafPackedValuesSupplier {
       int currentRunStartIndex; // i
       int indexInRun; // j
       final int compressedByteOffset;
-      IndexInput in;
-      int count;
-      int compressedDim;
-      int[] commonPrefixLengths;
-      byte[] scratchPackedValue;
+      final IndexInput in;
+      final int count;
+      final int compressedDim;
+      final int[] commonPrefixLengths;
+      final byte[] scratchPackedValue;
       int runLen;
 
       PackedValuesSupplierForVisitCompressedDocValuesBulk(
@@ -976,7 +978,7 @@ public class BKDReader extends PointValues {
         this.currentRunStartIndex = 0;
         this.indexInRun = 0;
         this.compressedByteOffset = compressedDim * config.bytesPerDim() + commonPrefixLengths[compressedDim];
-        commonPrefixLengths[compressedDim]++;
+        this.commonPrefixLengths[compressedDim]++;
         this.runLen = 0;
       }
       @Override
@@ -985,7 +987,7 @@ public class BKDReader extends PointValues {
           return false;
         }
 
-        if (indexInRun == runLen) {
+        while (indexInRun == runLen) { // TODO: switching if --> while, in case runLen is 0 - not sure if this can actually happen or if it is the problem...
           currentRunStartIndex += runLen;
           if (currentRunStartIndex >= count) {
             return false;
