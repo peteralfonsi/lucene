@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -220,7 +221,7 @@ public class IndexSearcher {
         : "IndexSearcher's ReaderContext must be topLevel for reader " + context.reader();
     reader = context.reader();
     this.taskExecutor =
-        executor == null ? new TaskExecutor(Runnable::run) : new TaskExecutor(executor);
+        executor == null ? new TaskExecutor(Executors.newVirtualThreadPerTaskExecutor()) : new TaskExecutor(executor);
     this.readerContext = context;
     leafContexts = context.leaves();
     if (executor == null) {
