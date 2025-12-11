@@ -220,8 +220,8 @@ public class IndexSearcher {
     assert context.isTopLevel
         : "IndexSearcher's ReaderContext must be topLevel for reader " + context.reader();
     reader = context.reader();
-    this.taskExecutor =
-        executor == null ? new TaskExecutor(Executors.newVirtualThreadPerTaskExecutor()) : new TaskExecutor(executor);
+    this.taskExecutor = new TaskExecutor(Executors.newVirtualThreadPerTaskExecutor()); // TODO: testing only
+        //executor == null ? new TaskExecutor(Executors.newVirtualThreadPerTaskExecutor()) : new TaskExecutor(executor);
     this.readerContext = context;
     leafContexts = context.leaves();
     if (executor == null) {
